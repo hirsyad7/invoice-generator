@@ -36,7 +36,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     : await puppeteer.launch({ headless: true, channel: "chrome" });
 
   const page = await browser.newPage();
-  await page.setContent(html, { waitUntil: "networkidle0" });
+  await page.setContent(html, { waitUntil: "domcontentloaded" });
 
   const pdfBuffer = await page.pdf({
     format: "A4",
