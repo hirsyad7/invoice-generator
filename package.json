@@ -2,6 +2,9 @@
   "name": "invoice-generator",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
     "predev": "node scripts/set-session-epoch.js",
     "postinstall": "prisma generate",
@@ -36,10 +39,5 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/bcryptjs": "^2.4.6"
-  },
-  "allowScripts": {
-    "@prisma/client@5.22.0": true,
-    "@prisma/engines@5.22.0": true,
-    "prisma@5.22.0": true
   }
 }
