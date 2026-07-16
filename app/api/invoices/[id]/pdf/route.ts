@@ -21,25 +21,18 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const showWatermark = (session.user as any).plan !== "pro";
   const html = await renderInvoiceHtml(invoiceForPdf, showWatermark);
 
-  // Di Vercel (serverless, Linux) pakai Chromium ringan dari @sparticuz/chromium.
-  // Di lokal (development), pakai Chrome yang sudah terinstall di komputer kamu
-  // (Puppeteer bisa menemukannya otomatis lewat opsi `channel: "chrome"`).
   const puppeteer = await import("puppeteer-core");
   const isDeployed = !!process.env.VERCEL;
 
+  // Di Vercel: connect ke browser yang sudah jalan di Browserless.io (bukan
+  // menjalankan Chromium sendiri) — ini menghindari masalah ketidakcocokan
+  // shared library antara @sparticuz/chromium dan environment Vercel yang
+  // terus-menerus gagal walau sudah dicoba beberapa perbaikan standar.
+  // Di lokal: tetap pakai Chrome yang sudah terinstall di komputer kamu.
   const browser = isDeployed
-    ? await (async () => {
-        const chromium = (await import("@sparticuz/chromium")).default;
-        // Matikan graphics mode supaya Chromium tidak butuh library grafis/GPU
-        // (seperti libnss3.so) yang memang tidak tersedia di environment
-        // serverless Vercel — ini fix resmi yang direkomendasikan @sparticuz/chromium.
-        chromium.setGraphicsMode = false;
-        return puppeteer.launch({
-          args: chromium.args,
-          executablePath: await chromium.executablePath(),
-          headless: true,
-        });
-      })()
+    ? await puppeteer.connect({
+        browserWSEndpoint: `wss://chrome.browserless.io?token=${process.env.BROWSERLESS_TOKEN}`,
+      })
     : await puppeteer.launch({ headless: true, channel: "chrome" });
 
   const page = await browser.newPage();
@@ -49,7 +42,9 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     format: "A4",
     printBackground: true,
   });
-  await browser.close();
+
+  if (isDeployed) await browser.disconnect();
+  else await browser.close();
 
   return new NextResponse(new Uint8Array(pdfBuffer), {
     headers: {
