@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id            String           @id @default(uuid())
+  email         String           @unique
+  passwordHash  String
+  role          String           @default("user") // "user" | "admin"
+  plan          String           @default("free") // "free" | "pro"
+  createdAt     DateTime         @default(now())
+  companies     CompanyProfile[]
+  clients       Client[]
+}
+
+model CompanyProfile {
+  id            String        @id @default(uuid())
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId        String
+  name          String
+  tagline       String?
+  logoUrl       String?
+  address       String?
+  phone         String?
+  email         String?
+  website       String?
+  npwp          String?
+  signerName    String?
+  signerTitle   String?
+  bankAccounts  BankAccount[]
+  invoices      Invoice[]
+  createdAt     DateTime      @default(now())
+}
+
+model BankAccount {
+  id            String         @id @default(uuid())
+  company       CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId     String
+  bankName      String
+  accountNumber String
+  accountName   String
+}
+
+model Client {
+  id        String    @id @default(uuid())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  name      String
+  address   String?
+  picName   String?
+  phone     String?
+  email     String?
+  invoices  Invoice[]
+  createdAt DateTime  @default(now())
+}
+
+model Invoice {
+  id               String        @id @default(uuid())
+  company          CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId        String
+  companySnapshot  Json          // salinan beku data perusahaan (nama, alamat, logo, bank, dst) di saat invoice dibuat
+  client           Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId         String
+  invoiceNo        String
+  invoiceDate      DateTime
+  dueDate          DateTime
+  currency         String        @default("IDR")
+  discountPercent  Decimal       @default(0)
+  taxPercent       Decimal       @default(11)
+  notes            String?
+  status           String        @default("draft") // draft | sent | paid
+  items            InvoiceItem[]
+  createdAt        DateTime      @default(now())
+
+  @@unique([companyId, invoiceNo])
+}
+
+model InvoiceItem {
+  id              String   @id @default(uuid())
+  invoice         Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoiceId       String
+  description     String
+  subDescription  String?
+  qty             Decimal
+  unit            String
+  unitPrice       Decimal
+  sortOrder       Int      @default(0)
+}
