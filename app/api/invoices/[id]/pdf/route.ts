@@ -30,6 +30,10 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const browser = isDeployed
     ? await (async () => {
         const chromium = (await import("@sparticuz/chromium")).default;
+        // Matikan graphics mode supaya Chromium tidak butuh library grafis/GPU
+        // (seperti libnss3.so) yang memang tidak tersedia di environment
+        // serverless Vercel — ini fix resmi yang direkomendasikan @sparticuz/chromium.
+        chromium.setGraphicsMode = false;
         return puppeteer.launch({
           args: chromium.args,
           executablePath: await chromium.executablePath(),
