@@ -48,19 +48,3 @@ export async function POST(req: Request) {
 
   return NextResponse.json(invoice, { status: 201 });
 }
-
-// Dipakai halaman form untuk preview total sebelum submit,
-// dan dipakai print template untuk cetak PDF.
-export function calculateInvoiceTotals(
-  items: { qty: number; unitPrice: number }[],
-  discountPercent: number,
-  taxPercent: number
-) {
-  const subtotal = items.reduce((sum, item) => sum + item.qty * item.unitPrice, 0);
-  const discount = (subtotal * discountPercent) / 100;
-  const afterDiscount = subtotal - discount;
-  const tax = (afterDiscount * taxPercent) / 100;
-  const total = afterDiscount + tax;
-
-  return { subtotal, discount, tax, total };
-}

@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
-import { calculateInvoiceTotals } from "@/app/api/invoices/route";
+import { calculateInvoiceTotals } from "@/lib/invoiceTotals";
 
 const rupiah = (n: number) => "Rp" + Math.round(n).toLocaleString("id-ID");
 
