@@ -38,6 +38,23 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const page = await browser.newPage();
   await page.setContent(html, { waitUntil: "domcontentloaded" });
 
+  // Tunggu khusus sampai semua gambar (terutama logo perusahaan yang sekarang
+  // berupa URL Supabase Storage, bukan base64) selesai dimuat, tanpa perlu
+  // menunggu kondisi network idle penuh yang sebelumnya bikin timeout di Browserless.
+  await page.evaluate(async () => {
+    const images = Array.from(document.images);
+    await Promise.all(
+      images.map((img) =>
+        img.complete
+          ? Promise.resolve()
+          : new Promise((resolve) => {
+              img.onload = resolve;
+              img.onerror = resolve;
+            })
+      )
+    );
+  });
+
   const pdfBuffer = await page.pdf({
     format: "A4",
     printBackground: true,
